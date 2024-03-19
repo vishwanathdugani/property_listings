@@ -91,8 +91,6 @@ class PropertyBase(BaseModel):
         if isinstance(v, int):
             return v
         if isinstance(v, str):
-            # print("original", v)
-            # # Check for 'null' or empty strings after stripping whitespace
             if v.strip().lower() in ['null', '']:
                 return None
             return int(v)
