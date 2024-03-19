@@ -48,6 +48,7 @@ This command builds the images for the frontend and backend services and starts 
 - **Security Enhancements:** Currently, the project utilizes basic security protocols. Future iterations should focus on implementing more robust security measures to ensure data protection and safe user interactions.
 
 - **Testing:** Comprehensive testing for both the APIs and user interface has not been conducted. Implementing automated tests will ensure the reliability and stability of the application.
+- **Caching :** Implememation of caching mechanisms would greatly improve the speed of the application
 
 ## Support
 
