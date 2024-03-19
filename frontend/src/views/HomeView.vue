@@ -2,17 +2,16 @@
   <div class="home-container">
     <div class="content">
       <div class="filters">
-        <!-- Filters content -->
         <input type="text" placeholder="Address" v-model="filters.address" />
         <input type="text" placeholder="Class" v-model="filters.class" />
-        <div>
+        <div class="slider-container">
           <label for="estimatedMarketValue">Estimated Market Value:</label>
           <input type="range" id="estimatedMarketValue" v-model="filters.estimatedMarketValueMin" min="0" max="1000000" step="1000">
           <span>{{ filters.estimatedMarketValueMin }}</span> to
           <input type="range" id="estimatedMarketValueMax" v-model="filters.estimatedMarketValueMax" min="0" max="1000000" step="1000">
           <span>{{ filters.estimatedMarketValueMax }}</span>
         </div>
-        <div>
+        <div class="slider-container">
           <label for="buildingSqFt">Building Sq Ft:</label>
           <input type="range" id="buildingSqFt" v-model="filters.buildingSqFtMin" min="0" max="10000" step="10">
           <span>{{ filters.buildingSqFtMin }}</span> to
@@ -20,20 +19,24 @@
           <span>{{ filters.buildingSqFtMax }}</span>
         </div>
         <input type="text" placeholder="BLDG_USE" v-model="filters.bldgUse" />
-        <button @click="fetchProperties">Apply Filters</button>
-        <button @click="clearFilters">Clear Filters</button>
+        <div class="filter-buttons">
+          <button @click="fetchProperties">Apply Filters</button>
+          <button @click="clearFilters">Clear Filters</button>
+        </div>
         <div v-if="!isValidRange" class="error-message">
-            Minimum values must be less than or equal to maximum values.
+          Minimum values must be less than or equal to maximum values.
         </div>
       </div>
-      
       <div class="properties-list">
         <h3>Properties</h3>
-        <button @click="nextPage" v-if="moreExists">Next Page</button>
-        <button @click="previousPage">Previous Page</button>
+        <div class="pagination-buttons">
+          <button @click="firstPage">First Page</button>
+          <button @click="previousPage">Previous Page</button>
+          <button @click="nextPage" v-if="moreExists">Next Page</button>
+        </div>
         <ul>
           <li v-for="property in properties" :key="property.id">
-            <router-link :to="{ name: 'PropertyDetails', params: { id: property.id }}">
+            <router-link :to="{ name: 'PropertyDetails', params: { id: property.id }}" class="property-link">
               <div>{{ property.full_address }}</div>
               <div>Class: {{ property.class_description }}</div>
               <div>BLDG_USE: {{ property.bldg_use }}</div>
@@ -42,13 +45,7 @@
             </router-link>
           </li>
         </ul>
-        <div class="pagination-buttons">
-          <button @click="firstPage">First Page</button>
-          <button @click="previousPage">Previous Page</button>
-          <button @click="nextPage" v-if="moreExists">Next Page</button>
-        </div>
       </div>
-      
       <div class="map-view" v-if="properties.length">
         <l-map :zoom="zoomLevel" :center="mapCenter" style="height: 100%">
           <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"></l-tile-layer>
@@ -77,6 +74,8 @@ export default {
     LTileLayer,
     LMarker,
   },
+
+
   setup() {
     const router = useRouter();
     const properties = ref([]);
@@ -131,11 +130,15 @@ export default {
         limit: limit.value,
       },
     });
+
     properties.value = response.data.properties;
     moreExists.value = response.data.moreExists;
-  } catch (error) {
+
+  } 
+  catch (error) {
     console.error("Failed to fetch properties:", error);
   }
+
   };
 
   const navigateToProperty = (propertyId) => {
@@ -182,20 +185,20 @@ export default {
   fetchProperties();
 
   return {
-  properties,
-  filters,
-  fetchProperties,
-  nextPage,
-  moreExists,
-  mapCenter,
-  zoomLevel,
-  navigateToProperty,
-  clearFilters,
-  firstPage,
-  previousPage,
-  isValidRange,
-  };
-  },
+      properties,
+      filters,
+      fetchProperties,
+      nextPage,
+      moreExists,
+      mapCenter,
+      zoomLevel,
+      navigateToProperty,
+      clearFilters,
+      firstPage,
+      previousPage,
+      isValidRange,
+      };
+    },
   };
   </script>
 

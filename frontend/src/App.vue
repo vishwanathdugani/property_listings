@@ -11,8 +11,8 @@ export default {
   name: 'App',
   methods: {
     logout() {
-      localStorage.removeItem('token'); // Remove the token
-      this.$router.push('/'); // Redirect to login page
+      localStorage.removeItem('token');
+      this.$router.push('/');
     }
   }
 }
@@ -42,7 +42,6 @@ button:hover {
   background-color: #ff6b81;
 }
 
-/* Global styles */
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -50,6 +49,5 @@ body {
   color: #333;
 }
 
-/* Additional global styles can go here */
 </style>
 

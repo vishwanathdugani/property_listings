@@ -5,7 +5,7 @@
       <input v-model="credentials.username" type="text" placeholder="Username" />
       <input v-model="credentials.password" type="password" placeholder="Password" />
       <button @click="login">Login</button>
-      <span v-if="errorMessage" class="error-message">{{ errorMessage }}</span>   
+      <span v-if="errorMessage" class="error-message">{{ errorMessage }}</span>
     </div>
   </div>
 </template>
@@ -25,47 +25,44 @@ export default {
   },
   methods: {
     async login() {
-  const token = btoa(`${this.credentials.username}:${this.credentials.password}`);
-  try {
-    const response = await fetch('http://localhost:8000/token', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${token}`,
-      },
-    });
-    if (response.ok) {
-      const data = await response.json();
-      console.log('Login successful', data);
-      setAuthToken(data.access_token); // Use setAuthToken
-      localStorage.setItem('token', data.access_token); // Optionally store the token for page reloads
-      this.$router.push('/home');
-    } else {
-      this.errorMessage = 'Login failed. Please check your credentials.';
-      console.error('Login failed');
-    }
-  } catch (error) {
-    this.errorMessage = 'An error occurred. Please try again.';
-    console.error('Login error', error);
-  }
-},
-
-
+      const token = btoa(`${this.credentials.username}:${this.credentials.password}`);
+      try {
+        const response = await fetch('http://localhost:8000/token', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${token}`,
+          },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Login successful', data);
+          setAuthToken(data.access_token);
+          localStorage.setItem('token', data.access_token);
+          this.$router.push('/home');
+        } else {
+          this.errorMessage = 'Login failed. Please check your credentials.';
+          console.error('Login failed');
+        }
+      } catch (error) {
+        this.errorMessage = 'An error occurred. Please try again.';
+        console.error('Login error', error);
+      }
+    },
     logout() {
-    localStorage.removeItem('token'); // Assuming the token is stored in localStorage
-    this.$router.push('/login'); // Redirect to login page
-  }
+      localStorage.removeItem('token');
+      this.$router.push('/login');
+    }
   },
 };
 </script>
-
 
 <style scoped>
 .login-container {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh; /* Full viewport height */
-  background-color: #f0f2f5; /* Light grey background */
+  height: 100vh;
+  background-color: #f0f2f5;
 }
 
 .login-form {
@@ -75,7 +72,7 @@ export default {
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Space between form elements */
+  gap: 20px;
   max-width: 400px;
   width: 100%;
 }
@@ -107,5 +104,4 @@ button:hover {
   margin-top: 10px;
   font-size: 14px;
 }
-
 </style>
