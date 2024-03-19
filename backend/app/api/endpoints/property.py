@@ -33,10 +33,10 @@ async def login_for_access_token(credentials: HTTPBasicCredentials = Depends(sec
 
 
 @router.post("/properties/", response_model=PropertyCreate, status_code=status.HTTP_201_CREATED)
-def create_property_endpoint(property: PropertyBase, db: Session = Depends(get_db),
+def create_property_endpoint(property_: PropertyBase, db: Session = Depends(get_db),
                              token: str = Depends(oauth2_scheme)):
     """Endpoint to create a new property."""
-    return create_property_db(db=db, property=property)
+    return create_property_db(db=db, property=property_)
 
 
 @router.get("/properties/", response_model=List[PropertyBase], status_code=status.HTTP_200_OK)

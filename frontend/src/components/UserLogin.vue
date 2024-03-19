@@ -84,12 +84,12 @@ input {
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  font-size: 16px; /* Larger font size for readability */
+  font-size: 16px;
 }
 
 button {
   padding: 10px 20px;
-  background-color: #007bff; /* Bootstrap primary color */
+  background-color: #007bff;
   color: white;
   border: none;
   border-radius: 5px;
@@ -99,13 +99,13 @@ button {
 }
 
 button:hover {
-  background-color: #0056b3; /* Darker shade on hover */
+  background-color: #0056b3;
 }
 
 .error-message {
-  color: red; /* Red text color for errors */
-  margin-top: 10px; /* Space above the error message */
-  font-size: 14px; /* Smaller font size for error text */
+  color: red;
+  margin-top: 10px;
+  font-size: 14px;
 }
 
 </style>

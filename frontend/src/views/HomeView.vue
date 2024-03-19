@@ -30,6 +30,7 @@
       <div class="properties-list">
         <h3>Properties</h3>
         <button @click="nextPage" v-if="moreExists">Next Page</button>
+        <button @click="previousPage">Previous Page</button>
         <ul>
           <li v-for="property in properties" :key="property.id">
             <router-link :to="{ name: 'PropertyDetails', params: { id: property.id }}">
@@ -104,17 +105,15 @@ export default {
     const avgLat = totalLat / properties.value.length;
     const avgLng = totalLng / properties.value.length;
 
-  return [avgLat, avgLng]; // Returns the average latitude and longitude
+  return [avgLat, avgLng];
 });
 
-  const zoomLevel = ref(12); // Initial zoom level; adjust as needed
+  const zoomLevel = ref(12); 
 
   const fetchProperties = async () => {
 
     if (!isValidRange.value) {
-    // Optionally log to console or handle error
     console.error("Invalid range: Min values must be <= Max values.");
-    return; // Exit the function if the range is not valid
   }
 
   try {
@@ -180,7 +179,6 @@ export default {
       };
     };
 
-  // Initial fetch of properties
   fetchProperties();
 
   return {
@@ -209,12 +207,12 @@ export default {
   flex-direction: column;
   max-width: 1200px;
   margin: 20px auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* A more modern font */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .content {
   display: flex;
-  gap: 20px; /* Adds space between filters/properties list and map */
+  gap: 20px;
 }
 
 .filters {
@@ -223,10 +221,10 @@ export default {
   padding: 20px;
   background-color: #f9f9f9;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow for depth */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Space between filter elements */
+  gap: 10px;
 }
 
 .properties-list {
@@ -235,14 +233,14 @@ export default {
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 20px;
-  overflow: hidden; /* Keeps children rounded within */
+  overflow: hidden;
 }
 
 .map-view {
   flex: 2;
   background-color: #ececec;
   border-radius: 8px;
-  overflow: hidden; /* Important for keeping the map corners rounded */
+  overflow: hidden;
   height: 600px;
 }
 
@@ -269,7 +267,7 @@ li:hover {
 .property-link {
   color: #333;
   text-decoration: none;
-  display: block; /* Allows full li to be clickable */
+  display: block; 
 }
 
 .filter-buttons, .pagination-buttons {
@@ -290,7 +288,7 @@ button {
 
 button:hover {
   background-color: #0056b3;
-  transform: translateY(-2px); /* Slight lift */
+  transform: translateY(-2px);
 }
 
 .slider-container {
@@ -303,7 +301,6 @@ label {
   margin-bottom: 5px;
 }
 
-/* Improves readability of input and select elements */
 input[type="text"], input[type="range"], select {
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -317,9 +314,9 @@ input[type="text"], input[type="range"], select {
 }
 
 h3 {
-  font-family: 'Roboto', sans-serif; /* Use the Roboto font */
-  font-weight: 700; /* Make it bold */
-  color: #333; /* Dark grey color */
-  margin-bottom: 20px; /* Add some space below the heading */
+  font-family: 'Roboto', sans-serif; 
+  font-weight: 700; 
+  color: #333;
+  margin-bottom: 20px; 
 }
 </style>

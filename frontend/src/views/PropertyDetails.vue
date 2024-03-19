@@ -56,7 +56,6 @@
     },
     async created() {
         try {
-        // Assuming this.$route.params.id is the correct way to access the property ID
         const response = await http.get(`properties/${this.$route.params.id}`);
         this.property = response.data;
         } catch (error) {
@@ -86,9 +85,9 @@
 
 .map-container {
   margin-top: 20px;
-  border: 2px solid #007bff; /* Border to make the map pop */
-  border-radius: 8px; /* Rounded corners for the map container */
-  overflow: hidden; /* Ensures the map corners are rounded */
+  border: 2px solid #007bff; 
+  border-radius: 8px;
+  overflow: hidden;
   height: 600px;
 }
 
