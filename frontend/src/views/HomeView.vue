@@ -2,265 +2,324 @@
   <div class="home-container">
     <div class="content">
       <div class="filters">
+        <!-- Filters content -->
         <input type="text" placeholder="Address" v-model="filters.address" />
         <input type="text" placeholder="Class" v-model="filters.class" />
         <div>
           <label for="estimatedMarketValue">Estimated Market Value:</label>
           <input type="range" id="estimatedMarketValue" v-model="filters.estimatedMarketValueMin" min="0" max="1000000" step="1000">
-          <span>{{filters.estimatedMarketValueMin}}</span>
-          to
+          <span>{{ filters.estimatedMarketValueMin }}</span> to
           <input type="range" id="estimatedMarketValueMax" v-model="filters.estimatedMarketValueMax" min="0" max="1000000" step="1000">
-          <span>{{filters.estimatedMarketValueMax}}</span>
+          <span>{{ filters.estimatedMarketValueMax }}</span>
         </div>
         <div>
           <label for="buildingSqFt">Building Sq Ft:</label>
           <input type="range" id="buildingSqFt" v-model="filters.buildingSqFtMin" min="0" max="10000" step="10">
-          <span>{{filters.buildingSqFtMin}}</span>
-          to
+          <span>{{ filters.buildingSqFtMin }}</span> to
           <input type="range" id="buildingSqFtMax" v-model="filters.buildingSqFtMax" min="0" max="10000" step="10">
-          <span>{{filters.buildingSqFtMax}}</span>
+          <span>{{ filters.buildingSqFtMax }}</span>
         </div>
-
         <input type="text" placeholder="BLDG_USE" v-model="filters.bldgUse" />
-        <!-- Add buttons or methods to apply/clear filters -->
         <button @click="fetchProperties">Apply Filters</button>
+        <button @click="clearFilters">Clear Filters</button>
+        <div v-if="!isValidRange" class="error-message">
+            Minimum values must be less than or equal to maximum values.
+        </div>
       </div>
+      
       <div class="properties-list">
-      <h3>Properties</h3>
-      <ul>
-      <li v-for="property in properties" :key="property.id">
-    <router-link v-if="property.id" :to="{ name: 'PropertyDetails', params: { id: property.id }}" class="property-link">
-      <div>{{ property.full_address }}</div>
-      <div>Class: {{ property.class_description }}</div>
-      <div>BLDG_USE: {{ property.bldg_use }}</div>
-      <div>Estimated Market Value: ${{ property.estimated_market_value.toLocaleString() }}</div>
-      <div>Building Sq Ft: {{ property.building_sq_ft }}</div>
-    </router-link>
-  </li>
-</ul>
-
-      <button @click="nextPage" v-if="moreExists">Next Page</button>
-    </div>
+        <h3>Properties</h3>
+        <button @click="nextPage" v-if="moreExists">Next Page</button>
+        <ul>
+          <li v-for="property in properties" :key="property.id">
+            <router-link :to="{ name: 'PropertyDetails', params: { id: property.id }}">
+              <div>{{ property.full_address }}</div>
+              <div>Class: {{ property.class_description }}</div>
+              <div>BLDG_USE: {{ property.bldg_use }}</div>
+              <div>Estimated Market Value: ${{ property.estimated_market_value.toLocaleString() }}</div>
+              <div>Building Sq Ft: {{ property.building_sq_ft }}</div>
+            </router-link>
+          </li>
+        </ul>
+        <div class="pagination-buttons">
+          <button @click="firstPage">First Page</button>
+          <button @click="previousPage">Previous Page</button>
+          <button @click="nextPage" v-if="moreExists">Next Page</button>
+        </div>
+      </div>
+      
+      <div class="map-view" v-if="properties.length">
+        <l-map :zoom="zoomLevel" :center="mapCenter" style="height: 100%">
+          <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"></l-tile-layer>
+          <l-marker v-for="property in properties" :key="property.id" :lat-lng="[property.latitude, property.longitude]" @click="navigateToProperty(property.id)">
+          </l-marker>
+        </l-map>
+      </div>
     </div>
   </div>
 </template>
 
+
+
+
 <script>
+import { ref, computed } from 'vue';
+import { LMap, LTileLayer, LMarker } from 'vue3-leaflet';
+import 'leaflet/dist/leaflet.css';
+import { useRouter } from 'vue-router';
 import http from '@/http';
-import { ref } from 'vue';
 
 export default {
   name: 'HomeView',
+  components: {
+    LMap,
+    LTileLayer,
+    LMarker,
+  },
   setup() {
+    const router = useRouter();
     const properties = ref([]);
     const currentPage = ref(0);
     const moreExists = ref(false);
-    const limit = ref(25); // You can adjust this as needed
+    const limit = ref(25); // Adjust as needed
     const filters = ref({
       address: '',
       class: '',
       bldgUse: '',
       estimatedMarketValueMin: 0,
-      estimatedMarketValueMax: 1000000,
+      estimatedMarketValueMax: 10000000,
       buildingSqFtMin: 0,
       buildingSqFtMax: 10000,
     });
 
-    const fetchProperties = async () => {
-      try {
-        const skip = currentPage.value * limit.value;
-        const response = await http.get('properties_listings/', {
-          params: {
-            full_address: filters.value.address,
-            class_description: filters.value.class,
-            bldg_use: filters.value.bldgUse,
-            estimated_market_value_min: filters.value.estimatedMarketValueMin,
-            estimated_market_value_max: filters.value.estimatedMarketValueMax,
-            building_sq_ft_min: filters.value.buildingSqFtMin,
-            building_sq_ft_max: filters.value.buildingSqFtMax,
-            skip: skip, // Include skip in the request
-            limit: limit.value, // Also make sure limit is included
-          },
-        });
-        console.log(response.data);
-        properties.value = response.data.properties;
-        moreExists.value = response.data.moreExists;
-      } catch (error) {
-        console.error("Failed to fetch properties:", error);
-      }
-    };
+    const mapCenter = computed(() => {
+    if (!properties.value.length) return [0, 0];
+    const { totalLat, totalLng } = properties.value.reduce((acc, cur) => {
+      return {
+        totalLat: acc.totalLat + cur.latitude,
+        totalLng: acc.totalLng + cur.longitude,
+      };
+    }, { totalLat: 0, totalLng: 0 });
 
-    const nextPage = () => {
+    const avgLat = totalLat / properties.value.length;
+    const avgLng = totalLng / properties.value.length;
+
+  return [avgLat, avgLng]; // Returns the average latitude and longitude
+});
+
+  const zoomLevel = ref(12); // Initial zoom level; adjust as needed
+
+  const fetchProperties = async () => {
+
+    if (!isValidRange.value) {
+    // Optionally log to console or handle error
+    console.error("Invalid range: Min values must be <= Max values.");
+    return; // Exit the function if the range is not valid
+  }
+
+  try {
+    const skip = currentPage.value * limit.value;
+    const response = await http.get('properties_listings/', {
+      params: {
+        full_address: filters.value.address,
+        class_description: filters.value.class,
+        bldg_use: filters.value.bldgUse,
+        estimated_market_value_min: filters.value.estimatedMarketValueMin,
+        estimated_market_value_max: filters.value.estimatedMarketValueMax,
+        building_sq_ft_min: filters.value.buildingSqFtMin,
+        building_sq_ft_max: filters.value.buildingSqFtMax,
+        skip: skip,
+        limit: limit.value,
+      },
+    });
+    properties.value = response.data.properties;
+    moreExists.value = response.data.moreExists;
+  } catch (error) {
+    console.error("Failed to fetch properties:", error);
+  }
+  };
+
+  const navigateToProperty = (propertyId) => {
+  router.push(`/properties/${propertyId}`);
+  };
+
+      const nextPage = () => {
       if (moreExists.value) {
         currentPage.value++;
         fetchProperties();
       }
     };
 
-    fetchProperties();
+    const isValidRange = computed(() => {
+      return filters.value.estimatedMarketValueMin <= filters.value.estimatedMarketValueMax && 
+            filters.value.buildingSqFtMin <= filters.value.buildingSqFtMax;
+    });
 
-    return {
-      properties,
-      filters,
-      fetchProperties,
-      nextPage,
-      moreExists
+    const firstPage = () => {
+      currentPage.value = 0;
+      fetchProperties();
     };
-  },
-};
-</script>
 
+    const previousPage = () => {
+      if (currentPage.value > 0) {
+        currentPage.value--;
+        fetchProperties();
+        console.log('Current page after decrement:', currentPage.value); // Debugging
+      }
+    };
+
+    const clearFilters = () => {
+      filters.value = {
+        address: '',
+        class: '',
+        bldgUse: '',
+        estimatedMarketValueMin: 0,
+        estimatedMarketValueMax: 10000000,
+        buildingSqFtMin: 0,
+        buildingSqFtMax: 10000,
+      };
+    };
+
+  // Initial fetch of properties
+  fetchProperties();
+
+  return {
+  properties,
+  filters,
+  fetchProperties,
+  nextPage,
+  moreExists,
+  mapCenter,
+  zoomLevel,
+  navigateToProperty,
+  clearFilters,
+  firstPage,
+  previousPage,
+  isValidRange,
+  };
+  },
+  };
+  </script>
 
 
 
 <style scoped>
 .home-container {
+  display: flex;
+  flex-direction: column;
   max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  margin: 20px auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* A more modern font */
 }
 
 .content {
   display: flex;
-  gap: 20px; /* Creates space between the filters and the property list */
+  gap: 20px; /* Adds space between filters/properties list and map */
 }
 
 .filters {
-  flex-basis: 20%;
+  flex: 1;
+  margin-right: 20px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Subtle shadow for depth */
   display: flex;
   flex-direction: column;
-  gap: 10px; /* Creates space between filter inputs */
+  gap: 10px; /* Space between filter elements */
 }
 
 .properties-list {
-  flex-grow: 1;
+  flex: 2;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 20px;
+  overflow: hidden; /* Keeps children rounded within */
+}
+
+.map-view {
+  flex: 2;
+  background-color: #ececec;
+  border-radius: 8px;
+  overflow: hidden; /* Important for keeping the map corners rounded */
+  height: 600px;
 }
 
 ul {
-  list-style-type: none;
+  list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 li {
-  margin-bottom: 10px;
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
+  transition: background-color 0.3s ease;
 }
 
-/* Styling for the router link to make it look more like a card */
-.router-link-active {
-  display: block;
-  background-color: #f9f9f9;
-  padding: 10px;
-  border-radius: 5px;
+li:last-child {
+  border-bottom: none;
+}
+
+li:hover {
+  background-color: #f6f6f6;
+}
+
+.property-link {
   color: #333;
   text-decoration: none;
-  border: 1px solid #ddd;
-  transition: all 0.3s ease;
+  display: block; /* Allows full li to be clickable */
 }
 
-.router-link-active:hover {
-  background-color: #eee;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+.filter-buttons, .pagination-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
 }
 
-/* Styling for search bars and sliders */
-input[type="text"], input[type="range"] {
-  width: 100%;
-  padding: 8px;
-  margin: 4px 0;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-/* Styling for buttons */
 button {
   background-color: #007bff;
   color: white;
-  padding: 10px 20px;
   border: none;
+  padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 button:hover {
   background-color: #0056b3;
+  transform: translateY(-2px); /* Slight lift */
 }
 
-/* Labels for sliders */
+.slider-container {
+  margin-bottom: 15px;
+}
+
 label {
-  font-size: 14px;
-  color: #666;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 5px;
 }
 
-/* Styling for the range input (slider) */
-input[type="range"] {
-  -webkit-appearance: none; /* Override default CSS styles */
-  appearance: none;
+/* Improves readability of input and select elements */
+input[type="text"], input[type="range"], select {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
   width: 100%;
-  height: 8px;
-  background: #ddd;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
 }
 
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  background: #007bff;
-  cursor: pointer;
-  border-radius: 50%;
+.error-message {
+  color: red;
+  margin-top: 10px;
 }
 
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: #007bff;
-  cursor: pointer;
-  border-radius: 50%;
+h3 {
+  font-family: 'Roboto', sans-serif; /* Use the Roboto font */
+  font-weight: 700; /* Make it bold */
+  color: #333; /* Dark grey color */
+  margin-bottom: 20px; /* Add some space below the heading */
 }
-
-
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-
-li {
-  margin-bottom: 20px; /* Increase spacing between items */
-}
-
-.property-link {
-  display: block;
-  background-color: #f9f9f9;
-  padding: 15px; /* Increase padding for better spacing */
-  border-radius: 8px;
-  color: #333;
-  text-decoration: none;
-  border: 2px solid #ddd; /* Thicker border for better visibility */
-  transition: all 0.3s ease;
-}
-
-.property-link:hover {
-  background-color: #eee;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Enhanced shadow for hover effect */
-}
-
-.property-link div {
-  margin-bottom: 5px; /* Space between details */
-  font-size: 16px; /* Larger font size for readability */
-  border-bottom: 1px solid #eaeaea; /* Subtle line between details */
-  padding-bottom: 5px; /* Padding at the bottom of each detail */
-}
-
-.property-link div:last-child {
-  border-bottom: none; /* Remove border from the last detail */
-}
-
 </style>
-

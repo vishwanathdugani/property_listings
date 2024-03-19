@@ -8,7 +8,7 @@ from app.db.session import get_db
 from app.core.auth import authenticate_user, create_access_token
 from fastapi.security import HTTPBasicCredentials, OAuth2PasswordBearer
 from app.crud.crud_property import create_property_db, get_property_db, update_property_db, delete_property_db, get_properties_db, get_filtered_properties_db
-from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertyBase, PropertyGetResponse, PropertyListings, PropertyListing, PaginatedPropertyListingsResponse
+from app.schemas.property import PropertyCreate, PropertyUpdate, PropertyBase, PropertyListings, PropertyListing, PaginatedPropertyListingsResponse
 
 from app.core.auth import security
 
@@ -28,7 +28,7 @@ async def login_for_access_token(credentials: HTTPBasicCredentials = Depends(sec
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@router.post("/properties/", response_model=PropertyResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/properties/", response_model=PropertyCreate, status_code=status.HTTP_201_CREATED)
 def create_property_endpoint(property: PropertyBase, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     return create_property_db(db=db, property=property)
 
@@ -37,6 +37,7 @@ def create_property_endpoint(property: PropertyBase, db: Session = Depends(get_d
 def read_properties_endpoint(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     properties = get_properties_db(db, skip=skip, limit=limit)
     return properties
+
 
 @router.get("/properties_listings/", response_model=PaginatedPropertyListingsResponse, status_code=status.HTTP_200_OK)
 def read_property_listings_endpoint(
@@ -75,11 +76,10 @@ def read_property_endpoint(property_id: int, db: Session = Depends(get_db), toke
     db_property = get_property_db(db, property_id=property_id)
     if db_property is None:
         raise HTTPException(status_code=404, detail="Property not found")
-    # print(jsonable_encoder(db_property))
     return jsonable_encoder(db_property)
 
 
-@router.put("/properties/{property_id}", response_model=PropertyResponse, status_code=status.HTTP_200_OK)
+@router.put("/properties/{property_id}", response_model=PropertyUpdate, status_code=status.HTTP_200_OK)
 def update_property_endpoint(property_id: int, property: PropertyUpdate, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     db_property = update_property_db(db=db, property_id=property_id, property=property)
     if db_property is None:

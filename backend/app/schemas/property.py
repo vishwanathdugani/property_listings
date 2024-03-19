@@ -133,7 +133,7 @@ class PropertyBase(BaseModel):
 
 
 class PropertyCreate(PropertyBase):
-    pass
+    id: int
 
 
 class PropertyUpdate(BaseModel):
@@ -147,6 +147,8 @@ class PropertyListings(BaseModel):
     estimated_market_value: int = Field(..., example=100000)
     bldg_use: str = Field(..., example="Single Family")
     building_sq_ft: int = Field(..., example=1200)
+    longitude: Optional[float] = None
+    latitude: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -156,10 +158,6 @@ class PropertyResponse(BaseModel):
     id: int
     longitude: Optional[float]
     latitude: Optional[float]
-
-
-class PropertyGetResponse(PropertyBase):
-    id: int
 
 
 class PropertyListing(BaseModel):
@@ -229,5 +227,3 @@ class PropertyListing(BaseModel):
 class PaginatedPropertyListingsResponse(BaseModel):
     properties: List[PropertyListings]
     moreExists: bool
-    # longitude: float
-    # latitude: float
