@@ -7,7 +7,6 @@ from requests.auth import HTTPBasicAuth
 
 # Constants
 EXCEL_FILE = "/Users/soumyatalikoti/Downloads/Enodo_Skills_Assessment_Data_File.xlsx"
-# EXCEL_FILE = "/Users/soumyatalikoti/Downloads/Enodo_Skills_Assessment_Data_File.csv"
 
 BASE_URL = "http://localhost:8000"
 LOGIN_URL = "http://localhost:8000/token"
@@ -182,8 +181,5 @@ if __name__ == "__main__":
                 #     print(f"Failed to delete property {property_id}.")
             else:
                 print("Failed to create property.")
-            # print(get_property_listings(token))
-            # if index >= 10:  # Limit to first 10 for demonstration
-            #     break
     else:
         print("Failed to obtain access token.")

@@ -28,13 +28,18 @@
       <div class="properties-list">
       <h3>Properties</h3>
       <ul>
-        <li v-for="property in properties" :key="property.id">
-          <router-link v-if="property.id" :to="{ name: 'PropertyDetails', params: { id: property.id }}">
-            {{ property.full_address }}, Class: {{ property.class_description }}, BLDG_USE: {{ property.bldg_use }},
-            Estimated Market Value: {{ property.estimated_market_value }}, Building Sq Ft: {{ property.building_sq_ft }}
-          </router-link>
-        </li>
-      </ul>
+      <li v-for="property in properties" :key="property.id">
+    <router-link v-if="property.id" :to="{ name: 'PropertyDetails', params: { id: property.id }}" class="property-link">
+      <div>{{ property.full_address }}</div>
+      <div>Class: {{ property.class_description }}</div>
+      <div>BLDG_USE: {{ property.bldg_use }}</div>
+      <div>Estimated Market Value: ${{ property.estimated_market_value.toLocaleString() }}</div>
+      <div>Building Sq Ft: {{ property.building_sq_ft }}</div>
+    </router-link>
+  </li>
+</ul>
+
+      <button @click="nextPage" v-if="moreExists">Next Page</button>
     </div>
     </div>
   </div>
@@ -48,6 +53,9 @@ export default {
   name: 'HomeView',
   setup() {
     const properties = ref([]);
+    const currentPage = ref(0);
+    const moreExists = ref(false);
+    const limit = ref(25); // You can adjust this as needed
     const filters = ref({
       address: '',
       class: '',
@@ -60,6 +68,7 @@ export default {
 
     const fetchProperties = async () => {
       try {
+        const skip = currentPage.value * limit.value;
         const response = await http.get('properties_listings/', {
           params: {
             full_address: filters.value.address,
@@ -69,12 +78,22 @@ export default {
             estimated_market_value_max: filters.value.estimatedMarketValueMax,
             building_sq_ft_min: filters.value.buildingSqFtMin,
             building_sq_ft_max: filters.value.buildingSqFtMax,
+            skip: skip, // Include skip in the request
+            limit: limit.value, // Also make sure limit is included
           },
         });
         console.log(response.data);
-        properties.value = response.data;
+        properties.value = response.data.properties;
+        moreExists.value = response.data.moreExists;
       } catch (error) {
         console.error("Failed to fetch properties:", error);
+      }
+    };
+
+    const nextPage = () => {
+      if (moreExists.value) {
+        currentPage.value++;
+        fetchProperties();
       }
     };
 
@@ -84,6 +103,8 @@ export default {
       properties,
       filters,
       fetchProperties,
+      nextPage,
+      moreExists
     };
   },
 };
@@ -203,5 +224,43 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   border-radius: 50%;
 }
+
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  margin-bottom: 20px; /* Increase spacing between items */
+}
+
+.property-link {
+  display: block;
+  background-color: #f9f9f9;
+  padding: 15px; /* Increase padding for better spacing */
+  border-radius: 8px;
+  color: #333;
+  text-decoration: none;
+  border: 2px solid #ddd; /* Thicker border for better visibility */
+  transition: all 0.3s ease;
+}
+
+.property-link:hover {
+  background-color: #eee;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Enhanced shadow for hover effect */
+}
+
+.property-link div {
+  margin-bottom: 5px; /* Space between details */
+  font-size: 16px; /* Larger font size for readability */
+  border-bottom: 1px solid #eaeaea; /* Subtle line between details */
+  padding-bottom: 5px; /* Padding at the bottom of each detail */
+}
+
+.property-link div:last-child {
+  border-bottom: none; /* Remove border from the last detail */
+}
+
 </style>
 

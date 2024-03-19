@@ -5,6 +5,7 @@
       <input v-model="credentials.username" type="text" placeholder="Username" />
       <input v-model="credentials.password" type="password" placeholder="Password" />
       <button @click="login">Login</button>
+      <span v-if="errorMessage" class="error-message">{{ errorMessage }}</span>   
     </div>
   </div>
 </template>
@@ -19,27 +20,35 @@ export default {
         username: '',
         password: '',
       },
+      errorMessage: '',
     };
   },
   methods: {
     async login() {
-      const token = btoa(`${this.credentials.username}:${this.credentials.password}`);
-      const response = await fetch('http://localhost:8000/token', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${token}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Login successful', data);
-        setAuthToken(data.access_token); // Use setAuthToken
-        localStorage.setItem('token', data.access_token); // Optionally store the token for page reloads
-        this.$router.push('/home');
-      } else {
-        console.error('Login failed');
-      }
-    },
+  const token = btoa(`${this.credentials.username}:${this.credentials.password}`);
+  try {
+    const response = await fetch('http://localhost:8000/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${token}`,
+      },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Login successful', data);
+      setAuthToken(data.access_token); // Use setAuthToken
+      localStorage.setItem('token', data.access_token); // Optionally store the token for page reloads
+      this.$router.push('/home');
+    } else {
+      this.errorMessage = 'Login failed. Please check your credentials.';
+      console.error('Login failed');
+    }
+  } catch (error) {
+    this.errorMessage = 'An error occurred. Please try again.';
+    console.error('Login error', error);
+  }
+},
+
 
     logout() {
     localStorage.removeItem('token'); // Assuming the token is stored in localStorage
@@ -92,4 +101,11 @@ button {
 button:hover {
   background-color: #0056b3; /* Darker shade on hover */
 }
+
+.error-message {
+  color: red; /* Red text color for errors */
+  margin-top: 10px; /* Space above the error message */
+  font-size: 14px; /* Smaller font size for error text */
+}
+
 </style>

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from pydantic import create_model
 
@@ -137,6 +137,33 @@ class PropertyCreate(PropertyBase):
 
 
 class PropertyUpdate(BaseModel):
+    id: int
+
+
+class PropertyListings(BaseModel):
+    id : int
+    full_address: str = Field(..., example="123 Main St, Anytown, USA")
+    class_description: str = Field(..., example="Residential")
+    estimated_market_value: int = Field(..., example=100000)
+    bldg_use: str = Field(..., example="Single Family")
+    building_sq_ft: int = Field(..., example=1200)
+
+    class Config:
+        from_attributes = True
+
+
+class PropertyResponse(BaseModel):
+    id: int
+    longitude: Optional[float]
+    latitude: Optional[float]
+
+
+class PropertyGetResponse(PropertyBase):
+    id: int
+
+
+class PropertyListing(BaseModel):
+    id: int
     full_address: str = None
     longitude: Optional[float] = None
     latitude: Optional[float] = None
@@ -199,20 +226,8 @@ class PropertyUpdate(BaseModel):
     appeal_a_resltdate: Optional[datetime] = None
 
 
-class PropertyListings(BaseModel):
-    id : int
-    full_address: str = Field(..., example="123 Main St, Anytown, USA")
-    class_description: str = Field(..., example="Residential")
-    estimated_market_value: int = Field(..., example=100000)
-    bldg_use: str = Field(..., example="Single Family")
-    building_sq_ft: int = Field(..., example=1200)
-
-
-class PropertyResponse(BaseModel):
-    id: int
-    # longitude: Optional[float]
-    # latitude: Optional[float]
-
-
-class PropertyGetResponse(PropertyBase):
-    id: int
+class PaginatedPropertyListingsResponse(BaseModel):
+    properties: List[PropertyListings]
+    moreExists: bool
+    # longitude: float
+    # latitude: float

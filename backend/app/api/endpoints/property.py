@@ -8,7 +8,7 @@ from app.db.session import get_db
 from app.core.auth import authenticate_user, create_access_token
 from fastapi.security import HTTPBasicCredentials, OAuth2PasswordBearer
 from app.crud.crud_property import create_property_db, get_property_db, update_property_db, delete_property_db, get_properties_db, get_filtered_properties_db
-from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertyBase, PropertyGetResponse, PropertyListings
+from app.schemas.property import PropertyCreate, PropertyResponse, PropertyUpdate, PropertyBase, PropertyGetResponse, PropertyListings, PropertyListing, PaginatedPropertyListingsResponse
 
 from app.core.auth import security
 
@@ -38,8 +38,7 @@ def read_properties_endpoint(skip: int = 0, limit: int = 100, db: Session = Depe
     properties = get_properties_db(db, skip=skip, limit=limit)
     return properties
 
-
-@router.get("/properties_listings/", response_model=List[PropertyListings], status_code=status.HTTP_200_OK)
+@router.get("/properties_listings/", response_model=PaginatedPropertyListingsResponse, status_code=status.HTTP_200_OK)
 def read_property_listings_endpoint(
     full_address: str = None,
     class_description: str = None,
@@ -49,7 +48,7 @@ def read_property_listings_endpoint(
     building_sq_ft_min: int = None,
     building_sq_ft_max: int = None,
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 25,
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
 ):
@@ -65,11 +64,13 @@ def read_property_listings_endpoint(
         skip=skip,
         limit=limit
     )
-    # print(jsonable_encoder(properties))
-    return jsonable_encoder(properties)
+
+    properties_models = [PropertyListings.from_orm(prop) for prop in properties]
+    more_exists = len(properties) == limit
+    return PaginatedPropertyListingsResponse(properties=properties_models, moreExists=more_exists)
 
 
-@router.get("/properties/{property_id}", response_model=PropertyBase, status_code=status.HTTP_200_OK)
+@router.get("/properties/{property_id}", response_model=PropertyListing, status_code=status.HTTP_200_OK)
 def read_property_endpoint(property_id: int, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     db_property = get_property_db(db, property_id=property_id)
     if db_property is None:

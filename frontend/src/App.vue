@@ -1,9 +1,10 @@
 <template>
   <div id="app">
-    <button @click="logout">Logout</button>
+    <button @click="logout" v-if="$route.path !== '/'">Logout</button>
     <router-view></router-view>
   </div>
 </template>
+
 
 <script>
 export default {
