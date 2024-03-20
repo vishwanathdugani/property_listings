@@ -58,7 +58,20 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return encoded_jwt
 
 
-def verify_token(token: str, credentials_exception):
+def verify_token(token: str, credentials_exception: HTTPException) -> str:
+    """
+    Verifies the given JWT token.
+
+    Args:
+        token (str): The JWT token to be verified.
+        credentials_exception (HTTPException): The exception to be raised in case of failure.
+
+    Returns:
+        str: The username extracted from the token payload if verification is successful.
+
+    Raises:
+        credentials_exception: If the token is invalid or the username is not found in the token payload.
+    """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -69,7 +82,19 @@ def verify_token(token: str, credentials_exception):
     return username
 
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
+def get_current_user(token: str = Depends(oauth2_scheme)) -> str:
+    """
+    Retrieves the current user by verifying the provided JWT token.
+
+    Args:
+        token (str, optional): The JWT token to be verified. Defaults to Depends(oauth2_scheme).
+
+    Returns:
+        str: The username of the current user if the token verification is successful.
+
+    Raises:
+        HTTPException: If the token verification fails.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
