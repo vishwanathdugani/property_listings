@@ -6,15 +6,19 @@
         <input type="text" placeholder="Class" v-model="filters.class" />
         <div class="slider-container">
           <label for="estimatedMarketValue">Estimated Market Value:</label>
+          <div>Min:</div>
           <input type="range" id="estimatedMarketValue" v-model="filters.estimatedMarketValueMin" min="0" max="1000000" step="1000">
           <span>{{ filters.estimatedMarketValueMin }}</span> to
+          <div>Max:</div>
           <input type="range" id="estimatedMarketValueMax" v-model="filters.estimatedMarketValueMax" min="0" max="1000000" step="1000">
           <span>{{ filters.estimatedMarketValueMax }}</span>
         </div>
         <div class="slider-container">
           <label for="buildingSqFt">Building Sq Ft:</label>
+          <div>Min:</div>
           <input type="range" id="buildingSqFt" v-model="filters.buildingSqFtMin" min="0" max="10000" step="10">
           <span>{{ filters.buildingSqFtMin }}</span> to
+          <div>Max:</div>
           <input type="range" id="buildingSqFtMax" v-model="filters.buildingSqFtMax" min="0" max="10000" step="10">
           <span>{{ filters.buildingSqFtMax }}</span>
         </div>
