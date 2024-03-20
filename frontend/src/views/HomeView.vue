@@ -50,9 +50,9 @@
           </li>
         </ul>
       </div>
-      <div class="map-view" v-if="properties.length">
+      <div class="map-view" v-if="properties.length > 0" >
         <l-map :zoom="zoomLevel" :center="mapCenter" style="height: 100%">
-          <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"></l-tile-layer>
+          <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" ></l-tile-layer>
           <l-marker v-for="property in properties" :key="property.id" :lat-lng="[property.latitude, property.longitude]" @click="navigateToProperty(property.id)">
           </l-marker>
         </l-map>

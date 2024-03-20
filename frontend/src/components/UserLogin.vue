@@ -2,8 +2,8 @@
   <div class="login-container">
     <div class="login-form">
       <h1>Login</h1>
-      <input v-model="credentials.username" type="text" placeholder="Username" />
-      <input v-model="credentials.password" type="password" placeholder="Password" />
+      <input v-model="credentials.username" type="text" placeholder="Username" @keyup.enter="login" />
+      <input v-model="credentials.password" type="password" placeholder="Password" @keyup.enter="login" />
       <button @click="login">Login</button>
       <span v-if="errorMessage" class="error-message">{{ errorMessage }}</span>
     </div>
