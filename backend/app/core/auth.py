@@ -64,7 +64,6 @@ def verify_token(token: str, credentials_exception):
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
-        # Here you can add more checks, for example, against a database to see if the user exists
     except JWTError:
         raise credentials_exception
     return username
