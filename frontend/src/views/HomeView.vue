@@ -5,30 +5,21 @@
         <input type="text" placeholder="Address" v-model="filters.address" />
         <input type="text" placeholder="Class" v-model="filters.class" />
         <div class="slider-container">
-          <label for="estimatedMarketValue">Estimated Market Value:</label>
-          <div>Min:</div>
-          <input type="range" id="estimatedMarketValue" v-model="filters.estimatedMarketValueMin" min="0" max="1000000" step="1000">
-          <span>{{ filters.estimatedMarketValueMin }}</span> to
-          <div>Max:</div>
-          <input type="range" id="estimatedMarketValueMax" v-model="filters.estimatedMarketValueMax" min="0" max="1000000" step="1000">
-          <span>{{ filters.estimatedMarketValueMax }}</span>
+          <label for="estimatedMarketValueRange" class="slider-label">Estimated Market Value Range:</label>
+          <div class="slider-container">
+          <VueSlider v-model="filters.estimatedMarketValueRange" :min="sliderRanges.estimatedMarketValue.min" :max="sliderRanges.estimatedMarketValue.max" :enable-cross="false" :tooltip="'always'"/>
+          </div>
         </div>
         <div class="slider-container">
-          <label for="buildingSqFt">Building Sq Ft:</label>
-          <div>Min:</div>
-          <input type="range" id="buildingSqFt" v-model="filters.buildingSqFtMin" min="0" max="10000" step="10">
-          <span>{{ filters.buildingSqFtMin }}</span> to
-          <div>Max:</div>
-          <input type="range" id="buildingSqFtMax" v-model="filters.buildingSqFtMax" min="0" max="10000" step="10">
-          <span>{{ filters.buildingSqFtMax }}</span>
+          <label for="buildingSqFtRange" class="slider-label">Building Sq Ft Range:</label>
+          <div class="slider-container">
+          <VueSlider v-model="filters.buildingSqFtRange" :min="sliderRanges.buildingSqFt.min" :max="sliderRanges.buildingSqFt.max" :enable-cross="false" :tooltip="'always'"/>
+        </div>
         </div>
         <input type="text" placeholder="BLDG_USE" v-model="filters.bldgUse" />
         <div class="filter-buttons">
           <button @click="fetchProperties">Apply Filters</button>
           <button @click="clearFilters">Clear Filters</button>
-        </div>
-        <div v-if="!isValidRange" class="error-message">
-          Minimum values must be less than or equal to maximum values.
         </div>
       </div>
       <div class="properties-list">
@@ -65,11 +56,14 @@
 
 
 <script>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { LMap, LTileLayer, LMarker } from 'vue3-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useRouter } from 'vue-router';
 import http from '@/http';
+import VueSlider from 'vue-slider-component';
+import 'vue-slider-component/theme/default.css'
+
 
 export default {
   name: 'HomeView',
@@ -77,23 +71,23 @@ export default {
     LMap,
     LTileLayer,
     LMarker,
+    VueSlider
   },
 
-
+  
   setup() {
     const router = useRouter();
     const properties = ref([]);
     const currentPage = ref(0);
     const moreExists = ref(false);
     const limit = ref(25); // Adjust as needed
+    
     const filters = ref({
       address: '',
       class: '',
       bldgUse: '',
-      estimatedMarketValueMin: 0,
-      estimatedMarketValueMax: 10000000,
-      buildingSqFtMin: 0,
-      buildingSqFtMax: 10000,
+      estimatedMarketValueRange: [0, 20000000],
+      buildingSqFtRange: [0, 20000],
     });
 
     const mapCenter = computed(() => {
@@ -114,11 +108,6 @@ export default {
   const zoomLevel = ref(12); 
 
   const fetchProperties = async () => {
-
-    if (!isValidRange.value) {
-    console.error("Invalid range: Min values must be <= Max values.");
-  }
-
   try {
     const skip = currentPage.value * limit.value;
     const response = await http.get('properties_listings/', {
@@ -126,24 +115,62 @@ export default {
         full_address: filters.value.address,
         class_description: filters.value.class,
         bldg_use: filters.value.bldgUse,
-        estimated_market_value_min: filters.value.estimatedMarketValueMin,
-        estimated_market_value_max: filters.value.estimatedMarketValueMax,
-        building_sq_ft_min: filters.value.buildingSqFtMin,
-        building_sq_ft_max: filters.value.buildingSqFtMax,
+        estimated_market_value_min: filters.value.estimatedMarketValueRange[0],
+        estimated_market_value_max: filters.value.estimatedMarketValueRange[1],
+        building_sq_ft_min: filters.value.buildingSqFtRange[0],
+        building_sq_ft_max: filters.value.buildingSqFtRange[1],
         skip: skip,
         limit: limit.value,
       },
     });
-
     properties.value = response.data.properties;
     moreExists.value = response.data.moreExists;
-
-  } 
-  catch (error) {
+  } catch (error) {
     console.error("Failed to fetch properties:", error);
   }
+};
 
-  };
+onMounted(() => {
+  fetchSliderRanges().then(fetchProperties);
+});
+
+
+  const sliderRanges = ref({
+      estimatedMarketValue: { min: 0, max: 1000000 },
+      buildingSqFt: { min: 0, max: 10000 },
+    });
+
+
+    const fetchSliderRanges = async () => {
+  try {
+    const { data } = await http.get('/properties/range');
+    // Update the slider ranges in filters
+    filters.value.estimatedMarketValueRange = [
+      data.estimated_market_value.min, 
+      data.estimated_market_value.max,
+    ];
+    filters.value.buildingSqFtRange = [
+      data.building_sq_ft.min, 
+      data.building_sq_ft.max,
+    ];
+    // Update sliderRanges for component knowledge
+    sliderRanges.value = {
+      estimatedMarketValue: {
+        min: data.estimated_market_value.min,
+        max: data.estimated_market_value.max,
+      },
+      buildingSqFt: {
+        min: data.building_sq_ft.min,
+        max: data.building_sq_ft.max,
+      },
+    };
+  } catch (error) {
+    console.error("Failed to fetch slider ranges:", error);
+  }
+};
+
+onMounted(fetchSliderRanges);
+
 
   const navigateToProperty = (propertyId) => {
   router.push(`/properties/${propertyId}`);
@@ -156,11 +183,6 @@ export default {
       }
     };
 
-    const isValidRange = computed(() => {
-      return filters.value.estimatedMarketValueMin <= filters.value.estimatedMarketValueMax && 
-            filters.value.buildingSqFtMin <= filters.value.buildingSqFtMax;
-    });
-
     const firstPage = () => {
       currentPage.value = 0;
       fetchProperties();
@@ -170,23 +192,28 @@ export default {
       if (currentPage.value > 0) {
         currentPage.value--;
         fetchProperties();
-        console.log('Current page after decrement:', currentPage.value); // Debugging
+        console.log('Current page after decrement:', currentPage.value);
       }
     };
 
     const clearFilters = () => {
-      filters.value = {
-        address: '',
-        class: '',
-        bldgUse: '',
-        estimatedMarketValueMin: 0,
-        estimatedMarketValueMax: 10000000,
-        buildingSqFtMin: 0,
-        buildingSqFtMax: 10000,
-      };
-    };
+  filters.value = {
+    address: '',
+    class: '',
+    bldgUse: '',
+    estimatedMarketValueRange: [
+      sliderRanges.value.estimatedMarketValue.min, 
+      sliderRanges.value.estimatedMarketValue.max
+    ],
+    buildingSqFtRange: [
+      sliderRanges.value.buildingSqFt.min, 
+      sliderRanges.value.buildingSqFt.max
+    ],
+  };
+};
 
-  fetchProperties();
+
+  fetchProperties;
 
   return {
       properties,
@@ -200,7 +227,7 @@ export default {
       clearFilters,
       firstPage,
       previousPage,
-      isValidRange,
+      sliderRanges
       };
     },
   };
@@ -326,4 +353,9 @@ h3 {
   color: #333;
   margin-bottom: 20px; 
 }
+
+.slider-label {
+  margin-bottom: 100pt;
+}
+
 </style>

@@ -10,12 +10,12 @@ from app.core.auth import authenticate_user, create_access_token, security
 from app.core.auth import oauth2_scheme, get_current_user
 from app.crud.crud_property import (
     create_property_db, get_property_db, update_property_db, delete_property_db,
-    get_properties_db, get_filtered_properties_db
+    get_properties_db, get_filtered_properties_db, get_property_value_range
 )
 from app.db.session import get_db
 from app.schemas.property import (
     PropertyCreate, PropertyUpdate, PropertyBase,
-    PropertyListings, PropertyListing, PaginatedPropertyListingsResponse
+    PropertyListings, PropertyListing, PaginatedPropertyListingsResponse, PropertyRangeSchema
 )
 
 
@@ -69,6 +69,13 @@ def read_property_listings_endpoint(
     return PaginatedPropertyListingsResponse(properties=properties_models, moreExists=more_exists)
 
 
+@router.get("/properties/range", response_model=PropertyRangeSchema)
+def get_property_range_endpoint(db: Session = Depends(get_db)):
+    """Endpoint to retrieve min and max values for property filters."""
+    range_values = get_property_value_range(db)
+    return range_values
+
+
 @router.get("/properties/{property_id}", response_model=PropertyListing, status_code=status.HTTP_200_OK)
 def read_property_endpoint(property_id: int, db: Session = Depends(get_db),
                            token: str = Depends(get_current_user)):
@@ -96,3 +103,9 @@ def delete_property_endpoint(property_id: int, db: Session = Depends(get_db),
     success = delete_property_db(db, property_id=property_id)
     if not success:
         raise HTTPException(status_code=404, detail="Property not found")
+
+
+# @router.get("/properties/range/", status_code=status.HTTP_200_OK)
+# def get_property_range_endpoint(db: Session = Depends(get_db), token: str = Depends(get_current_user)):
+#     """Endpoint to retrieve min and max values for property filters."""
+

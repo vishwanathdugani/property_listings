@@ -13,6 +13,7 @@ LOGIN_URL = "http://localhost:8000/token"
 CREATE_PROPERTY_URL = "http://localhost:8000/properties/"
 UPDATE_PROPERTY_URL = f"{BASE_URL}/properties/{{}}"
 DELETE_PROPERTY_URL = f"{BASE_URL}/properties/{{}}"
+RANGE_PROPERTY_URL = f"{BASE_URL}/properties/range"
 PROPERTY_LISTINGS = f"{BASE_URL}/properties_listings/"
 LOG_FILE = "failed_logs.txt"
 
@@ -153,18 +154,26 @@ def get_property_listings(token_):
     return response.json()
 
 
+def get_property_listings_range(token_):
+    url = RANGE_PROPERTY_URL
+    headers = {"Authorization": f"Bearer {token_}", "Content-Type": "application/json"}
+    response = requests.get(url, headers=headers)
+    return response.json()
+
+
 if __name__ == "__main__":
     token = get_access_token()
-    if token:
-        df = pd.read_excel(EXCEL_FILE, dtype=str)
-
-        for index, row in df.iterrows():
-            property_data = row_to_property_base(row)
-            post_response = post_property(token, property_data)
-            print(post_response.json())
-            if post_response.status_code == 201:
-                property_id = post_response.json().get("id")
-                print(f"Property {property_id} created.")
+    print(get_property_listings_range(token))
+    # if token:
+    #     df = pd.read_excel(EXCEL_FILE, dtype=str)
+    #
+    #     for index, row in df.iterrows():
+    #         property_data = row_to_property_base(row)
+    #         post_response = post_property(token, property_data)
+    #         print(post_response.json())
+    #         if post_response.status_code == 201:
+    #             property_id = post_response.json().get("id")
+    #             print(f"Property {property_id} created.")
 
                 # # Update the property
                 # update_response = update_property(token, property_id, {"zip": "99999"})
@@ -179,7 +188,7 @@ if __name__ == "__main__":
                 #     print(f"Property {property_id} deleted.")
                 # else:
                 #     print(f"Failed to delete property {property_id}.")
-            else:
-                print("Failed to create property.")
-    else:
-        print("Failed to obtain access token.")
+    #         else:
+    #             print("Failed to create property.")
+    # else:
+    #     print("Failed to obtain access token.")

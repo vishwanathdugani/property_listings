@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.models import Property
 
@@ -142,3 +143,17 @@ def get_filtered_properties_db(
         query = query.filter(Property.building_sq_ft <= building_sq_ft_max)
 
     return query.offset(skip).limit(limit).all()
+
+
+def get_property_value_range(db: Session) -> dict:
+    """Retrieve the minimum and maximum values for estimated market value and building square footage."""
+    max_min_values = db.query(
+        func.min(Property.estimated_market_value).label("min_estimated_market_value"),
+        func.max(Property.estimated_market_value).label("max_estimated_market_value"),
+        func.min(Property.building_sq_ft).label("min_building_sq_ft"),
+        func.max(Property.building_sq_ft).label("max_building_sq_ft")
+    ).first()
+    return {
+        "estimated_market_value": {"min": max_min_values.min_estimated_market_value, "max": max_min_values.max_estimated_market_value},
+        "building_sq_ft": {"min": max_min_values.min_building_sq_ft, "max": max_min_values.max_building_sq_ft}
+    }

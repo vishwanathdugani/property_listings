@@ -225,3 +225,12 @@ class PropertyListing(BaseModel):
 class PaginatedPropertyListingsResponse(BaseModel):
     properties: List[PropertyListings]
     moreExists: bool
+
+
+class ValueRange(BaseModel):
+    min: int
+    max: int
+
+class PropertyRangeSchema(BaseModel):
+    estimated_market_value: ValueRange
+    building_sq_ft: ValueRange
