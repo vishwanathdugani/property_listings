@@ -41,8 +41,16 @@
           </li>
         </ul>
       </div>
-      <div class="map-view" v-if="properties.length > 0" >
-        <l-map :zoom="zoomLevel" :center="mapCenter" style="height: 100%">
+      <div class="map-view" v-if="properties && properties.length > 0">
+
+        <l-map
+          ref="mapInstance"
+          :zoom="zoomLevel"
+          :center="mapCenter"
+          style="height: 100%"
+          @update:zoom="zoomLevel = $event"
+          @update:center="mapCenter = $event"
+          >
           <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" ></l-tile-layer>
           <l-marker v-for="property in properties" :key="property.id" :lat-lng="[property.latitude, property.longitude]" @click="navigateToProperty(property.id)">
           </l-marker>
@@ -56,7 +64,7 @@
 
 
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { LMap, LTileLayer, LMarker } from 'vue3-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useRouter } from 'vue-router';
@@ -81,7 +89,15 @@ export default {
     const currentPage = ref(0);
     const moreExists = ref(false);
     const limit = ref(25); // Adjust as needed
+    const mapInstance = ref(null);
     
+    watch(properties, (newProperties) => {
+      if (newProperties.length > 0 && mapInstance.value) {
+        const bounds = newProperties.map(property => [property.latitude, property.longitude]);
+        mapInstance.value.fitBounds(bounds);
+      }
+    }, { deep: true, immediate: true });
+
     const filters = ref({
       address: '',
       class: '',
@@ -123,12 +139,14 @@ export default {
         limit: limit.value,
       },
     });
-    properties.value = response.data.properties;
-    moreExists.value = response.data.moreExists;
+    console.log(response.data);
+    properties.value = response.data.data; // Adjust this line based on actual response structure
+    moreExists.value = response.data.more_exists; // Ensure this matches the backend's response
   } catch (error) {
     console.error("Failed to fetch properties:", error);
   }
 };
+
 
 onMounted(() => {
   fetchSliderRanges().then(fetchProperties);
@@ -227,7 +245,8 @@ onMounted(fetchSliderRanges);
       clearFilters,
       firstPage,
       previousPage,
-      sliderRanges
+      sliderRanges,
+      mapInstance
       };
     },
   };
