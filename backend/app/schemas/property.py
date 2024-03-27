@@ -3,6 +3,7 @@ from typing import Optional, List
 
 
 class PropertyQuerySchema(BaseModel):
+    """Schema for querying properties based on various filters."""
     full_address: Optional[str] = None
     class_description: Optional[str] = None
     estimated_market_value_min: Optional[int] = None
@@ -15,6 +16,7 @@ class PropertyQuerySchema(BaseModel):
 
 
 class PropertyData(BaseModel):
+    """Data model for property details."""
     id: int
     full_address: str
     longitude: float
@@ -26,19 +28,25 @@ class PropertyData(BaseModel):
 
 
 class PaginatedPropertyResponse(BaseModel):
+    """Paginated response model for property listings."""
     data: List[PropertyData]
     more_exists: bool
 
+
 class Range(BaseModel):
+    """Defines a range with minimum and maximum values."""
     min: int
     max: int
 
+
 class SliderRangeResponse(BaseModel):
+    """Response model for slider filter ranges in UI."""
     estimated_market_value: Range
     building_sq_ft: Range
 
 
 class PropertyCreateRequest(BaseModel):
+    """Schema for property creation request."""
     longitude: float
     latitude: float
     zip: str
@@ -51,6 +59,7 @@ class PropertyCreateRequest(BaseModel):
 
 
 class PropertyCreateResponse(BaseModel):
+    """Response model for property creation."""
     id: int
     longitude: Optional[float] = None
     latitude: Optional[float] = None
@@ -67,6 +76,7 @@ class PropertyCreateResponse(BaseModel):
 
 
 class PropertyClassificationCreate(BaseModel):
+    """Schema for creating a property classification."""
     property_id: int = None
     ovac_ls: int
     class_description: str
@@ -76,6 +86,7 @@ class PropertyClassificationCreate(BaseModel):
 
 
 class AssessmentCreate(BaseModel):
+    """Schema for creating property assessment details."""
     property_id: int = None
     current_land: int = None
     current_building: int = None
@@ -87,6 +98,7 @@ class AssessmentCreate(BaseModel):
 
 
 class SalesAppealCreate(BaseModel):
+    """Schema for creating a sales appeal record for a property."""
     property_id: Optional[int] = None
     multi_sale: Optional[bool] = None
     deed_type: Optional[int] = None
@@ -95,6 +107,7 @@ class SalesAppealCreate(BaseModel):
 
 
 class PropertyFeatureCreate(BaseModel):
+    """Schema for creating property features."""
     property_id: int
     comm_units: Optional[int] = None
     ext_desc: Optional[str] = None
@@ -111,6 +124,7 @@ class PropertyFeatureCreate(BaseModel):
 
 
 class MiscInfoCreate(BaseModel):
+    """Schema for creating miscellaneous property information."""
     property_id: int
     rec_type: Optional[str] = None
     pin: Optional[int] = None
@@ -122,6 +136,7 @@ class MiscInfoCreate(BaseModel):
 
 
 class PropertyDetailResponse(BaseModel):
+    """Detailed response model for a single property."""
     id: int
     longitude: Optional[float]
     latitude: Optional[float]
@@ -146,7 +161,7 @@ class PropertyDetailResponse(BaseModel):
     prior_total: Optional[int]
     multi_sale: Optional[bool]
     deed_type: Optional[int]
-    sale_date: Optional[str]  # ISO format
+    sale_date: Optional[str]
     sale_amount: Optional[int]
     comm_units: Optional[int]
     ext_desc: Optional[str]
