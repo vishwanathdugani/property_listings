@@ -11,7 +11,7 @@ class PropertyQuerySchema(BaseModel):
     building_sq_ft_max: Optional[int] = None
     bldg_use: Optional[str] = None
     skip: int = 0
-    limit: int = 10
+    limit: int = 5
 
 
 class PropertyData(BaseModel):

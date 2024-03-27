@@ -1,9 +1,11 @@
+from fastapi import HTTPException
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 from typing import List, Tuple
 
 from app.schemas.property import PropertyQuerySchema, PropertyCreateRequest, PropertyClassificationCreate, \
-    AssessmentCreate, SalesAppealCreate, PropertyFeatureCreate, MiscInfoCreate
+    AssessmentCreate, SalesAppealCreate, PropertyFeatureCreate, MiscInfoCreate, \
+    SliderRangeResponse, PropertyDetailResponse
 from app.models.models import SalesAppeal, MiscInfo, Property, PropertyClassification, \
     Assessment, PropertyFeature
 
@@ -24,7 +26,6 @@ def filter_by_address_components(query, address: str):
         # Apply all conditions using or_
         query = query.filter(or_(*conditions))
     return query
-
 
 
 def apply_other_filters(query, query_params: PropertyQuerySchema):
@@ -48,7 +49,6 @@ def paginate_query(query, skip: int, limit: int) -> Tuple[List[Property], bool]:
     more_exists = len(results) > limit
     properties = results[:limit]
     return properties, more_exists
-
 
 
 def get_filtered_properties(db: Session, query_params: PropertyQuerySchema) -> Tuple[List[Property], bool]:
@@ -76,16 +76,6 @@ def get_filtered_properties(db: Session, query_params: PropertyQuerySchema) -> T
 
 
 def create_property_db(db: Session, property_data: PropertyCreateRequest) -> Property:
-    """
-    Create a new property in the database.
-
-    Parameters:
-        db (Session): SQLAlchemy session object.
-        property_data (PropertyCreateRequest): Data for the new property.
-
-    Returns:
-        Property: The newly created Property instance.
-    """
     new_property = Property(**property_data.dict())
     db.add(new_property)
     db.commit()
@@ -115,12 +105,14 @@ def create_sales_appeal(db: Session, sales_appeal_data: SalesAppealCreate) -> Sa
     db.refresh(new_sales_appeal)
     return new_sales_appeal
 
+
 def create_property_feature(db: Session, feature_data: PropertyFeatureCreate) -> PropertyFeature:
     new_feature = PropertyFeature(**feature_data.dict())
     db.add(new_feature)
     db.commit()
     db.refresh(new_feature)
     return new_feature
+
 
 def create_misc_info(db: Session, misc_info_data: MiscInfoCreate) -> MiscInfo:
     new_misc_info = MiscInfo(**misc_info_data.dict())
@@ -129,3 +121,64 @@ def create_misc_info(db: Session, misc_info_data: MiscInfoCreate) -> MiscInfo:
     db.refresh(new_misc_info)
     return new_misc_info
 
+
+def get_slider_ranges_crud(db: Session) -> SliderRangeResponse:
+    emv_min, emv_max = db.query(
+        func.min(Assessment.estimated_market_value),
+        func.max(Assessment.estimated_market_value)
+    ).first()
+
+    sq_ft_min, sq_ft_max = db.query(
+        func.min(PropertyFeature.building_sq_ft),
+        func.max(PropertyFeature.building_sq_ft)
+    ).first()
+
+    return SliderRangeResponse(
+        estimated_market_value={"min": emv_min or 0, "max": emv_max or 10000000},
+        building_sq_ft={"min": sq_ft_min or 0, "max": sq_ft_max or 20000},
+    )
+
+
+def fetch_property_classification(db: Session, property_id: int):
+    return db.query(PropertyClassification).filter(
+        PropertyClassification.property_id == property_id).first()
+
+
+def fetch_assessment(db: Session, property_id: int):
+    return db.query(Assessment).filter(Assessment.property_id == property_id).first()
+
+
+def fetch_sales_appeal(db: Session, property_id: int):
+    return db.query(SalesAppeal).filter(SalesAppeal.property_id == property_id).first()
+
+
+def fetch_property_feature(db: Session, property_id: int):
+    return db.query(PropertyFeature).filter(PropertyFeature.property_id == property_id).first()
+
+
+def fetch_misc_info(db: Session, property_id: int):
+    return db.query(MiscInfo).filter(MiscInfo.property_id == property_id).first()
+
+
+def get_property_details(property_id: int, db: Session) -> PropertyDetailResponse:
+    property_obj = db.query(Property).filter(Property.id == property_id).first()
+    if not property_obj:
+        raise HTTPException(status_code=404, detail="Property not found")
+
+    # Fetch details using helper functions
+    property_classification = fetch_property_classification(db, property_id)
+    assessment = fetch_assessment(db, property_id)
+    sales_appeal = fetch_sales_appeal(db, property_id)
+    property_feature = fetch_property_feature(db, property_id)
+    misc_info = fetch_misc_info(db, property_id)
+
+    # Create a dict for initial property data
+    response_data = {**property_obj.__dict__}
+
+    # Update the dict with additional details, if present
+    for detail in [property_classification, assessment, sales_appeal, property_feature, misc_info]:
+        if detail:
+            response_data.update(detail.__dict__)
+
+    # Return PropertyDetailResponse, removing SQLAlchemy's internal attributes
+    return PropertyDetailResponse(**{k: v for k, v in response_data.items() if not k.startswith('_')})
