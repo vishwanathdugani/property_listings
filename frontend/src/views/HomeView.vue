@@ -21,13 +21,14 @@
           <button @click="fetchProperties">Apply Filters</button>
           <button @click="clearFilters">Clear Filters</button>
         </div>
+        
       </div>
       <div class="properties-list">
-        <h3>Properties</h3>
+        <h2>Properties</h2>
         <div class="pagination-buttons">
-          <button @click="firstPage">First Page</button>
-          <button @click="previousPage">Previous Page</button>
-          <button @click="nextPage" v-if="moreExists">Next Page</button>
+          <a href="#" @click.prevent="firstPage" v-if="currentPage > 0">First Page</a> 
+          <a href="#" @click.prevent="previousPage" v-if="currentPage > 0">Previous Page</a> 
+          <a href="#" @click.prevent="nextPage" v-if="moreExists">Next Page</a>
         </div>
         <ul>
           <li v-for="property in properties" :key="property.id">
@@ -40,11 +41,27 @@
             </router-link>
           </li>
         </ul>
+        <div class="pagination-buttons">
+  <a href="#" @click.prevent="firstPage" v-if="currentPage > 0">First Page</a> 
+  <a href="#" @click.prevent="previousPage" v-if="currentPage > 0">Previous Page</a> 
+  <a href="#" @click.prevent="nextPage" v-if="moreExists">Next Page</a>
+</div>
       </div>
-      <div class="map-view" v-if="properties.length > 0" >
-        <l-map :zoom="zoomLevel" :center="mapCenter" style="height: 100%">
+      <div class="map-view" v-if="properties && properties.length > 0">
+
+        <l-map
+          ref="mapInstance"
+          :zoom="zoomLevel"
+          :center="mapCenter"
+          style="height: 100%"
+          @update:zoom="zoomLevel = $event"
+          @update:center="mapCenter = $event"
+          >
           <l-tile-layer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" ></l-tile-layer>
           <l-marker v-for="property in properties" :key="property.id" :lat-lng="[property.latitude, property.longitude]" @click="navigateToProperty(property.id)">
+            <!-- <l-tooltip>
+              {{ property.full_address || 'Loading address...' }}
+      </l-tooltip> -->
           </l-marker>
         </l-map>
       </div>
@@ -53,10 +70,9 @@
 </template>
 
 
-
-
 <script>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+// import { LMap, LTileLayer, LMarker, LTooltip } from 'vue3-leaflet';
 import { LMap, LTileLayer, LMarker } from 'vue3-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useRouter } from 'vue-router';
@@ -71,7 +87,8 @@ export default {
     LMap,
     LTileLayer,
     LMarker,
-    VueSlider
+    VueSlider,
+    // LTooltip
   },
 
   
@@ -81,7 +98,15 @@ export default {
     const currentPage = ref(0);
     const moreExists = ref(false);
     const limit = ref(25); // Adjust as needed
+    const mapInstance = ref(null);
     
+    watch(properties, (newProperties) => {
+      if (newProperties.length > 0 && mapInstance.value) {
+        const bounds = newProperties.map(property => [property.latitude, property.longitude]);
+        mapInstance.value.fitBounds(bounds);
+      }
+    }, { deep: true, immediate: true });
+
     const filters = ref({
       address: '',
       class: '',
@@ -123,12 +148,14 @@ export default {
         limit: limit.value,
       },
     });
-    properties.value = response.data.properties;
-    moreExists.value = response.data.moreExists;
+    console.log(response.data);
+    properties.value = response.data.data; // Adjust this line based on actual response structure
+    moreExists.value = response.data.more_exists; // Ensure this matches the backend's response
   } catch (error) {
     console.error("Failed to fetch properties:", error);
   }
 };
+
 
 onMounted(() => {
   fetchSliderRanges().then(fetchProperties);
@@ -227,71 +254,58 @@ onMounted(fetchSliderRanges);
       clearFilters,
       firstPage,
       previousPage,
-      sliderRanges
+      sliderRanges,
+      mapInstance,
+      currentPage
       };
     },
   };
   </script>
 
 
-
 <style scoped>
-.home-container {
-  display: flex;
-  flex-direction: column;
-  max-width: 1200px;
-  margin: 20px auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
 .content {
   display: flex;
   gap: 20px;
+  justify-content: space-between;
+  margin: 0 40px;
 }
 
-.filters {
+.filters, .properties-list, .map-view {
   flex: 1;
-  margin-right: 20px;
-  padding: 20px;
   background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.properties-list {
-  flex: 2;
-  background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   padding: 20px;
-  overflow: hidden;
+}
+
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.properties-list {
+  background-color: #fff;
+  padding: 20px;
 }
 
 .map-view {
-  flex: 2;
-  background-color: #ececec;
-  border-radius: 8px;
-  overflow: hidden;
+  background-color: #eeeeee;
+  border: 1px solid #ddd;
   height: 600px;
 }
 
-ul {
+ul, li {
+  margin-top: 20px;
   list-style: none;
-  padding: 0;
+  padding: 10px;
   margin: 0;
 }
 
 li {
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px;
   transition: background-color 0.3s ease;
-}
-
-li:last-child {
-  border-bottom: none;
 }
 
 li:hover {
@@ -301,61 +315,44 @@ li:hover {
 .property-link {
   color: #333;
   text-decoration: none;
-  display: block; 
 }
 
-.filter-buttons, .pagination-buttons {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
-}
-
-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-}
-
-button:hover {
-  background-color: #0056b3;
-  transform: translateY(-2px);
-}
-
-.slider-container {
-  margin-bottom: 15px;
-}
-
-label {
-  font-weight: bold;
-  color: #555;
+.property-link > div {
   margin-bottom: 5px;
 }
 
-input[type="text"], input[type="range"], select {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 8px;
-  width: 100%;
+.property-link > div:first-child {
+  font-weight: bold;
+  color: #007bff;
 }
 
-.error-message {
-  color: red;
+.filter-buttons button, .pagination-buttons a {
+  background-color: #007bff;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pagination-buttons a {
+  background-color: transparent;
+  color: #007bff;
+  margin: 0 10px;
+}
+
+.filter-buttons button:hover, .pagination-buttons a:hover {
+  background-color: #0056b3;
+}
+
+.sorting-container select {
+  padding: 10px;
   margin-top: 10px;
-}
-
-h3 {
-  font-family: 'Roboto', sans-serif; 
-  font-weight: 700; 
-  color: #333;
-  margin-bottom: 20px; 
-}
-
-.slider-label {
-  margin-bottom: 100pt;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
 
 </style>
+
+

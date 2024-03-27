@@ -9,7 +9,7 @@ import secrets
 # Constants for JWT token creation and verification
 SECRET_KEY = "a very secret key"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 5  # token expiry limit in minutes
+ACCESS_TOKEN_EXPIRE_MINUTES = 1  # token expiry limit in minutes
 
 # Initialize HTTPBasic auth scheme
 security = HTTPBasic()

@@ -16,6 +16,7 @@
         <p><strong>Number of Units:</strong> {{ property.units_tot }}</p>
         <p><strong>Fireplaces:</strong> {{ property.fireplace }}</p>
         <p><strong>Air Conditioning:</strong> {{ property.ac ? 'Yes' : 'No' }}</p>
+        
         <p>{{ property.full_address }}</p>
       </div>
       <div class="map-container" v-if="property.latitude && property.longitude">
