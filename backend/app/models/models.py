@@ -1,70 +1,96 @@
-from sqlalchemy import Column, Integer, String, Float, Date
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Text, Index, Boolean
+from sqlalchemy.orm import relationship
 from app.db.base import Base
 
-from datetime import datetime
 
 
 class Property(Base):
-    __tablename__ = "properties"
-
-    id = Column(Integer, primary_key=True, index=True)
-    full_address = Column(String, index=True)
+    __tablename__ = 'properties'
+    id = Column(Integer, primary_key=True)
     longitude = Column(Float)
     latitude = Column(Float)
-    zip = Column(Integer)
-    rec_type = Column(String)
-    pin = Column(Integer)
-    ovacls = Column(Integer)
-    class_description = Column(String)
+    zip = Column(String, index=True)
+    house_no = Column(String, nullable=False)
+    dir = Column(String)
+    street = Column(String, nullable=False)
+    suffix = Column(String)
+    apt = Column(String)
+    city = Column(String, nullable=False)
+
+    assessments = relationship("Assessment", back_populates="property")
+    sales_appeals = relationship("SalesAppeal", back_populates="property")
+    property_features = relationship("PropertyFeature", back_populates="property")
+    misc_info = relationship("MiscInfo", back_populates="property")
+    property_classifications = relationship("PropertyClassification", back_populates="property")
+    __table_args__ = (Index('zip', 'house_no', 'street', 'suffix', 'apt', 'city', unique=True),)
+
+
+class PropertyClassification(Base):
+    __tablename__ = 'property_classifications'
+    property_id = Column(Integer, ForeignKey('properties.id'))
+    id = Column(Integer, primary_key=True)
+    ovac_ls = Column(Integer)
+    class_description = Column(Text, index=True)
+    res_type = Column(String)
+    bldg_use = Column(String, index=True)
+    apt_desc = Column(String)
+    property = relationship("Property", back_populates="property_classifications")
+
+
+
+class Assessment(Base):
+    __tablename__ = 'assessments'
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey('properties.id'))
     current_land = Column(Integer)
     current_building = Column(Integer)
     current_total = Column(Integer)
-    estimated_market_value = Column(Integer)
+    estimated_market_value = Column(Integer, index=True)
     prior_land = Column(Integer)
     prior_building = Column(Integer)
     prior_total = Column(Integer)
-    pprior_land = Column(Integer)
-    pprior_building = Column(Integer)
-    pprior_total = Column(Integer)
-    pprior_year = Column(Integer)
-    town = Column(Integer)
-    volume = Column(Integer)
-    loc = Column(String)
-    tax_code = Column(Integer)
-    neighborhood = Column(Integer)
-    houseno = Column(Integer)
-    dir = Column(String)
-    street = Column(String)
-    suffix = Column(String)
-    apt = Column(String)
-    city = Column(String)
-    res_type = Column(String)
-    bldg_use = Column(String)
-    apt_desc = Column(Integer)
+    property = relationship("Property", back_populates="assessments")
+
+
+class SalesAppeal(Base):
+    __tablename__ = 'sales_appeals'
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey('properties.id'))
+    multi_sale = Column(Boolean)
+    deed_type = Column(Integer)
+    sale_date = Column(DateTime, nullable=True)
+    sale_amount = Column(Integer)
+    property = relationship("Property", back_populates="sales_appeals")
+
+
+class PropertyFeature(Base):
+    __tablename__ = 'property_features'
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey('properties.id'))
     comm_units = Column(Integer)
     ext_desc = Column(String)
     full_bath = Column(Integer)
     half_bath = Column(Integer)
-    bsmt_desc = Column(String)
+    bsmnt_desc = Column(String)
     attic_desc = Column(String)
     ac = Column(Integer)
     fireplace = Column(Integer)
     gar_desc = Column(String)
     age = Column(Integer)
-    building_sq_ft = Column(Integer)
+    building_sq_ft = Column(Integer, index=True)
     land_sq_ft = Column(Integer)
-    bldg_sf = Column(Integer)
-    units_tot = Column(Integer)
-    multi_sale = Column(Integer)
-    deed_type = Column(Integer)
-    sale_date = Column(Date)
-    sale_amount = Column(Integer)
-    appcnt = Column(Integer)
-    appeal_a = Column(Integer)
-    appeal_a_status = Column(String)
-    appeal_a_result = Column(String)
-    appeal_a_reason = Column(Integer)
-    appeal_a_pin_result = Column(String)
-    appeal_a_propav = Column(Integer)
-    appeal_a_currav = Column(Integer)
-    appeal_a_resltdate = Column(Date)
+    property = relationship("Property", back_populates="property_features")
+
+
+class MiscInfo(Base):
+    __tablename__ = 'misc_info'
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey('properties.id'))
+    rec_type = Column(String)
+    pin = Column(Integer)
+    town = Column(Integer)
+    volume = Column(Integer)
+    loc = Column(String)
+    tax_code = Column(Integer)
+    neighborhood = Column(Integer)
+    property = relationship("Property", back_populates="misc_info")
